@@ -1,0 +1,92 @@
+#include <stdio.h>
+#include <string.h>
+
+int main() {
+    FILE *fp = fopen("input.txt", "r");
+    FILE *out = fopen("result.txt", "w");
+
+    if (fp == NULL || out == NULL) {
+        printf("Error opening file.\n");
+        return 1;
+    }
+
+    char line[200];
+    int test = 0;
+
+    while (fgets(line, sizeof(line), fp)) {
+        if (strstr(line, "#Test") != NULL) {
+            int n, W;
+            
+            if (!fgets(line, sizeof(line), fp))
+                break;
+
+            if (sscanf(line, "%d %d", &n, &W) != 2)
+                continue;
+
+            int wt[101], val[101];
+            int dp[101][1001] = {0};
+
+            if (n > 100 || W > 1000 || W < 0)
+                break;
+
+            int valid = 1;
+
+            for (int i = 1; i <= n; i++) {
+                if (!fgets(line, sizeof(line), fp) ||
+                    sscanf(line, "%d %d", &wt[i], &val[i]) != 2) {
+                    valid = 0;
+                    break;
+                }
+            }
+
+            if (!valid)
+                break;
+
+            test++;
+
+            printf("\n#Test %d\n", test);
+            printf("DP Table:\n");
+
+            printf("%5s", "Item");
+            for (int w = 0; w <= W; w++)
+                printf("%4d", w);
+            printf("\n");
+
+            for (int i = 0; i <= n; i++) {
+                for (int w = 0; w <= W; w++) {
+                    if (i == 0 || w == 0) {
+                        dp[i][w] = 0;
+                    } else if (wt[i] <= w) {
+                        int take = val[i] + dp[i - 1][w - wt[i]];
+                        int skip = dp[i - 1][w];
+                        dp[i][w] = take > skip ? take : skip;
+                    } else {
+                        dp[i][w] = dp[i - 1][w];
+                    }
+                }
+
+                printf("%5d", i);
+                for (int w = 0; w <= W; w++)
+                    printf("%4d", dp[i][w]);
+                printf("\n");
+            }
+
+            printf("Maximum value: %d\n", dp[n][W]);
+
+            fprintf(out, "#Test %d\n", test);
+            fprintf(out, "%d %d\n", n, W);
+
+            for (int i = 1; i <= n; i++)
+                fprintf(out, "%d %d\n", wt[i], val[i]);
+
+            fprintf(out, "Result: %d\n\n", dp[n][W]);
+        }
+    }
+
+    fclose(fp);
+    fclose(out);
+
+    printf("\nResults saved in result.txt\n");
+
+    return 0;
+}
